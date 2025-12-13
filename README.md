@@ -1,1 +1,119 @@
-# Teddy-mobile-inventry-management-system
+# Teddy Mobile - Stock Management System
+
+A modern full-stack Stock Management System built with **React + Vite** and **Supabase** for mobile phone retail with inventory management, profit calculation, and audit tracking.
+
+![Teddy Mobile Logo](./tdy-logo.png)
+
+## 🚀 Features
+
+### Stock Management
+- Full CRUD operations for inventory
+- Auto stock code generation (`TDY-XXXX` from IMEI last 4 digits)
+- Search by code, IMEI, or phone model
+- Filter by state (in stock / sold)
+- Mark as sold with profit calculation
+
+### Profit Calculation Tool
+- Phone & accessory sales tracking
+- Automatic 80/20 profit split (Thabrew / Kelan)
+- PDF report generation
+- Save reports to database
+
+### Stock Check (Audit)
+- Start verification sessions
+- Real-time progress tracking
+- Missing items detection
+- PDF audit reports
+
+### Kelan Payment Tracking
+- Balance summary (earned / paid / due)
+- Payment history
+- Add new payments
+
+### User Management
+- Admin and Cashier roles
+- Role-based access control
+- Admin-only user management
+
+## 🛠️ Tech Stack
+
+- **Frontend**: React 18, Vite, React Router v6
+- **Backend**: Supabase (PostgreSQL + Auth)
+- **Charts**: Chart.js + react-chartjs-2
+- **PDF**: jsPDF + jspdf-autotable
+- **Icons**: Lucide React
+- **Styling**: Vanilla CSS with modern design system
+
+## 📦 Installation
+
+### 1. Install Dependencies
+
+```bash
+npm install
+```
+
+### 2. Configure Supabase
+
+1. Create a new project at [supabase.com](https://supabase.com)
+2. Go to **Settings > API** and copy your Project URL and anon key
+3. Update `.env`:
+
+```env
+VITE_SUPABASE_URL=https://your-project-id.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
+```
+
+### 3. Set Up Database
+
+1. Go to **SQL Editor** in Supabase Dashboard
+2. Run the contents of `supabase-schema.sql`
+
+### 4. Create Admin User
+
+1. Go to **Authentication > Users** in Supabase Dashboard
+2. Click "Add User" and create:
+   - Email: `admin@teddy.com`
+   - Password: `password123`
+3. Copy the user ID and run this SQL:
+
+```sql
+INSERT INTO users (id, email, name, role)
+VALUES (
+  'paste-user-id-here',
+  'admin@teddy.com',
+  'Admin',
+  'admin'
+);
+```
+
+### 5. Run Development Server
+
+```bash
+npm run dev
+```
+
+Open [http://localhost:5173](http://localhost:5173)
+
+## 🎨 Brand Colors
+
+| Color | Hex | Usage |
+|-------|-----|-------|
+| Primary Red | #E10613 | Primary actions, branding |
+| Dark Red | #A7040E | Hover states |
+| Black | #1A1A1D | Text, backgrounds |
+
+## 📱 Pages
+
+| Page | Route | Access |
+|------|-------|--------|
+| Login | /login | Public |
+| Dashboard | /dashboard | Authenticated |
+| Stock Management | /stock | Authenticated |
+| Stock Check | /stock-check | Authenticated |
+| Profit Tool | /profit | Authenticated |
+| Reports | /reports | Authenticated |
+| User Management | /users | Admin only |
+
+## 📄 License
+
+Proprietary software for Teddy Mobile.
