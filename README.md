@@ -68,25 +68,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key
 1. Go to **SQL Editor** in Supabase Dashboard
 2. Run the contents of `supabase-schema.sql`
 
-### 4. Create Admin User
-
-1. Go to **Authentication > Users** in Supabase Dashboard
-2. Click "Add User" and create:
-   - Email: `admin@teddy.com`
-   - Password: `password123`
-3. Copy the user ID and run this SQL:
-
-```sql
-INSERT INTO users (id, email, name, role)
-VALUES (
-  'paste-user-id-here',
-  'admin@teddy.com',
-  'Admin',
-  'admin'
-);
-```
-
-### 5. Run Development Server
+### 4. Run Development Server
 
 ```bash
 npm run dev
