@@ -11,7 +11,9 @@ import {
     ShoppingCart,
     Package,
     Loader2,
-    Filter,
+    ArrowUpDown,
+    ArrowUp,
+    ArrowDown,
     ClipboardCheck,
     Download
 } from 'lucide-react'
@@ -21,7 +23,11 @@ const Stock = () => {
     const [stocks, setStocks] = useState([])
     const [loading, setLoading] = useState(true)
     const [search, setSearch] = useState('')
-    const [stateFilter, setStateFilter] = useState('all')
+    // Sort and filter states (Stock tab only)
+    const [sortBy, setSortBy] = useState('buy_date')      // 'buy_date' or 'code'
+    const [sortOrder, setSortOrder] = useState('desc')    // 'asc' or 'desc'
+    const [priceMin, setPriceMin] = useState('')          // Minimum retail price
+    const [priceMax, setPriceMax] = useState('')          // Maximum retail price
     const [showAddModal, setShowAddModal] = useState(false)
     const [showEditModal, setShowEditModal] = useState(false)
     const [showDeleteModal, setShowDeleteModal] = useState(false)
@@ -285,17 +291,52 @@ const Stock = () => {
         setSelectedStock(null)
     }
 
-    // Filter stocks
-    const filteredStocks = stocks.filter(stock => {
-        const matchesSearch =
-            stock.code?.toLowerCase().includes(search.toLowerCase()) ||
-            stock.phone?.toLowerCase().includes(search.toLowerCase()) ||
-            stock.imei?.toLowerCase().includes(search.toLowerCase())
+    // Filter and sort stocks
+    const getFilteredAndSortedStocks = () => {
+        let result = stocks.filter(stock => {
+            // Search filter (both tabs)
+            const matchesSearch =
+                stock.code?.toLowerCase().includes(search.toLowerCase()) ||
+                stock.phone?.toLowerCase().includes(search.toLowerCase()) ||
+                stock.imei?.toLowerCase().includes(search.toLowerCase())
 
-        const matchesState = stateFilter === 'all' || stock.state === stateFilter
+            // Price range filter (Stock tab only)
+            if (activeTab === 'stock') {
+                const retailPrice = parseFloat(stock.retail_price) || 0
+                const minPrice = priceMin ? parseFloat(priceMin) : 0
+                const maxPrice = priceMax ? parseFloat(priceMax) : Infinity
+                const matchesPrice = retailPrice >= minPrice && retailPrice <= maxPrice
+                return matchesSearch && matchesPrice
+            }
 
-        return matchesSearch && matchesState
-    })
+            return matchesSearch
+        })
+
+        // Sorting (Stock tab only)
+        if (activeTab === 'stock') {
+            result.sort((a, b) => {
+                let compareA, compareB
+
+                if (sortBy === 'buy_date') {
+                    compareA = new Date(a.buy_date || 0).getTime()
+                    compareB = new Date(b.buy_date || 0).getTime()
+                } else if (sortBy === 'code') {
+                    compareA = a.code?.toLowerCase() || ''
+                    compareB = b.code?.toLowerCase() || ''
+                }
+
+                if (sortOrder === 'asc') {
+                    return compareA > compareB ? 1 : compareA < compareB ? -1 : 0
+                } else {
+                    return compareA < compareB ? 1 : compareA > compareB ? -1 : 0
+                }
+            })
+        }
+
+        return result
+    }
+
+    const filteredStocks = getFilteredAndSortedStocks()
 
     // Export to CSV function
     const exportToCSV = () => {
@@ -406,10 +447,10 @@ const Stock = () => {
                 </button>
             </div>
 
-            {/* Filters */}
+            {/* Filters and Sort Controls */}
             <div className="card mb-6">
-                <div className="filters">
-                    <div className="search-bar" style={{ flex: 1, maxWidth: 400 }}>
+                <div className="filters" style={{ flexWrap: 'wrap', gap: '1rem' }}>
+                    <div className="search-bar" style={{ flex: 1, minWidth: 250, maxWidth: 400 }}>
                         <Search size={18} />
                         <input
                             type="text"
@@ -419,19 +460,55 @@ const Stock = () => {
                             onChange={(e) => setSearch(e.target.value)}
                         />
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <Filter size={18} style={{ color: 'var(--gray-500)' }} />
-                        <select
-                            className="form-input form-select"
-                            style={{ width: 'auto' }}
-                            value={stateFilter}
-                            onChange={(e) => setStateFilter(e.target.value)}
-                        >
-                            <option value="all">All States</option>
-                            <option value="in_stock">In Stock</option>
-                            <option value="sold">Sold</option>
-                        </select>
-                    </div>
+
+                    {/* Sort and Price Range Controls - Stock Tab Only */}
+                    {activeTab === 'stock' && (
+                        <>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <ArrowUpDown size={18} style={{ color: 'var(--gray-500)' }} />
+                                <select
+                                    className="form-input form-select"
+                                    style={{ width: 'auto' }}
+                                    value={sortBy}
+                                    onChange={(e) => setSortBy(e.target.value)}
+                                >
+                                    <option value="buy_date">Buy Date</option>
+                                    <option value="code">TDY Code</option>
+                                </select>
+                                <button
+                                    className="btn btn-outline btn-sm"
+                                    onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                                    title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
+                                    style={{ padding: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                                >
+                                    {sortOrder === 'asc' ? <ArrowUp size={16} /> : <ArrowDown size={16} />}
+                                    {sortOrder === 'asc' ? 'Asc' : 'Desc'}
+                                </button>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <span style={{ color: 'var(--gray-500)', fontSize: '0.875rem', whiteSpace: 'nowrap' }}>Price Range:</span>
+                                <input
+                                    type="number"
+                                    className="form-input"
+                                    style={{ width: 100 }}
+                                    placeholder="Min Rs."
+                                    value={priceMin}
+                                    onChange={(e) => setPriceMin(e.target.value)}
+                                    min="0"
+                                />
+                                <span style={{ color: 'var(--gray-500)' }}>to</span>
+                                <input
+                                    type="number"
+                                    className="form-input"
+                                    style={{ width: 100 }}
+                                    placeholder="Max Rs."
+                                    value={priceMax}
+                                    onChange={(e) => setPriceMax(e.target.value)}
+                                    min="0"
+                                />
+                            </div>
+                        </>
+                    )}
                 </div>
             </div>
 
