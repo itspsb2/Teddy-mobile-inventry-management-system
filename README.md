@@ -2,7 +2,7 @@
 
 A modern full-stack Stock Management System built with **React + Vite** and **Supabase** for mobile phone retail with inventory management, profit calculation, and audit tracking.
 
-![Teddy Mobile Logo](./tdy-logo.png)
+![Teddy Mobile Logo](./public/tdy-logo.png)
 
 ## 🚀 Features
 
