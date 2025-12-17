@@ -467,7 +467,8 @@ const ProfitCalculations = () => {
                         console.log('Found stock:', stockItem)
 
                         // Step 3: Insert into sold_stocks with all required fields
-                        const costValue = parseFloat(stockItem.cost) || parseFloat(stockItem.wholesale_price) || 0
+                        // Use cost from profit report entry (p.cost), NOT from stock table
+                        const costValue = parseFloat(p.cost) || 0
                         const sellPriceValue = parseFloat(p.revenue) || 0
 
                         const soldStockData = {
