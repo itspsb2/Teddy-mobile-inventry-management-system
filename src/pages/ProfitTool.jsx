@@ -466,9 +466,8 @@ const ProfitCalculations = () => {
 
                         console.log('Found stock:', stockItem)
 
-                        // Step 3: Insert into sold_stocks with all required fields
-                        // Use cost from profit report entry (p.cost), NOT from stock table
-                        const costValue = parseFloat(p.cost) || 0
+                        // Step 3: Copy data from stock table, but use COST from profit report
+                        const costValue = parseFloat(p.cost) || 0  // Cost from profit report
                         const sellPriceValue = parseFloat(p.revenue) || 0
 
                         const soldStockData = {
@@ -480,13 +479,14 @@ const ProfitCalculations = () => {
                             colour: stockItem.colour || 'N/A',
                             description: stockItem.description || '',
                             buy_date: stockItem.buy_date,
-                            cost: costValue,
+                            cost: costValue,  // FROM PROFIT REPORT, not from stock table
                             sell_price: sellPriceValue,
                             sell_date: reportDate
                         }
 
                         console.log('Inserting sold_stock data:', soldStockData)
 
+                        // Step 4: Insert into sold_stocks
                         const { error: insertError } = await supabase
                             .from('sold_stocks')
                             .insert([soldStockData])
@@ -499,18 +499,27 @@ const ProfitCalculations = () => {
 
                         console.log(`Inserted into sold_stocks successfully`)
 
-                        // Step 3: Delete from stocks
-                        const { error: deleteError } = await supabase
+                        // Step 5: DELETE from stocks table (CRITICAL - must happen!)
+                        console.log(`Attempting to delete stock id: ${stockItem.id} from stocks table...`)
+
+                        const { data: deleteData, error: deleteError } = await supabase
                             .from('stocks')
                             .delete()
                             .eq('id', stockItem.id)
+                            .select()  // Return deleted rows to verify
 
                         if (deleteError) {
-                            console.error(`Failed to delete stock ${p.imei} from stocks:`, deleteError)
-                        } else {
-                            console.log(`Successfully moved stock ${p.imei} to sold_stocks`)
-                            movedCount++
+                            console.error(`DELETE ERROR for stock ${p.imei}:`, deleteError)
+                            // Try to remove the sold_stock entry we just added since delete failed
+                            await supabase.from('sold_stocks').delete().eq('imei', stockItem.imei)
+                            skippedCount++
+                            continue
                         }
+
+                        console.log(`Delete result:`, deleteData)
+                        console.log(`Successfully moved stock ${p.imei} from stocks to sold_stocks`)
+                        movedCount++
+
                     } catch (err) {
                         console.error(`Error moving stock ${p.imei}:`, err)
                         skippedCount++
