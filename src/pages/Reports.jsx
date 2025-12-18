@@ -12,7 +12,8 @@ import {
     X,
     Phone,
     Package,
-    Users
+    Users,
+    BarChart3
 } from 'lucide-react'
 
 const Reports = () => {
@@ -190,15 +191,32 @@ const Reports = () => {
             return reportDate >= startDate && reportDate <= endDate
         })
 
+        const kelanTotal = rangeReports.reduce((sum, r) => sum + parseFloat(r.kelan_total || 0), 0)
+
         return {
             count: rangeReports.length,
-            totalProfit: rangeReports.reduce((sum, r) =>
-                sum + parseFloat(r.phone_total_profit || 0) + parseFloat(r.accessory_total_profit || 0), 0
-            ),
-            thabrewTotal: rangeReports.reduce((sum, r) => sum + parseFloat(r.thabrew_total || 0), 0),
-            kelanTotal: rangeReports.reduce((sum, r) => sum + parseFloat(r.kelan_total || 0), 0)
+            thabrewTotal: kelanTotal * 4,  // Thabrew = Kelan x 4
+            kelanTotal: kelanTotal
         }
     }
+
+    // Get daily profits for chart
+    const getDailyProfits = () => {
+        const rangeReports = reports.filter(r => {
+            const reportDate = r.report_date
+            return reportDate >= startDate && reportDate <= endDate
+        })
+
+        // Sort by date ascending
+        return rangeReports
+            .map(r => ({
+                date: r.report_date,
+                profit: parseFloat(r.phone_total_profit || 0) + parseFloat(r.accessory_total_profit || 0)
+            }))
+            .sort((a, b) => new Date(a.date) - new Date(b.date))
+    }
+
+    const dailyProfits = getDailyProfits()
 
     const dateRangeStats = getDateRangeStats()
 
@@ -247,7 +265,7 @@ const Reports = () => {
             </div>
 
             {/* Summary Stats */}
-            <div className="stats-grid mb-6">
+            <div className="stats-grid mb-6" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
                 <div className="stat-card">
                     <div className="stat-icon">
                         <Calendar size={24} />
@@ -259,22 +277,13 @@ const Reports = () => {
                 </div>
 
                 <div className="stat-card">
-                    <div className="stat-icon" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10B981' }}>
-                        <TrendingUp size={24} />
-                    </div>
-                    <div className="stat-content">
-                        <h3>Total Profit</h3>
-                        <p className="stat-value">Rs. {dateRangeStats.totalProfit.toLocaleString()}</p>
-                    </div>
-                </div>
-
-                <div className="stat-card">
-                    <div className="stat-icon" style={{ background: 'rgba(59, 130, 246, 0.1)', color: '#3B82F6' }}>
+                    <div className="stat-icon" style={{ background: 'rgba(225, 6, 19, 0.1)', color: '#E10613' }}>
                         <FileText size={24} />
                     </div>
                     <div className="stat-content">
                         <h3>Thabrew Share</h3>
                         <p className="stat-value">Rs. {dateRangeStats.thabrewTotal.toLocaleString()}</p>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Kelan × 4</span>
                     </div>
                 </div>
 
@@ -288,6 +297,74 @@ const Reports = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Day-by-Day Profit Chart */}
+            {dailyProfits.length > 0 && (
+                <div className="card mb-6">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                        <BarChart3 size={20} style={{ color: 'var(--primary)' }} />
+                        <h3 style={{ margin: 0, fontWeight: 600 }}>Daily Profit Chart</h3>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', height: '200px', padding: '0.5rem 0' }}>
+                        {(() => {
+                            const maxProfit = Math.max(...dailyProfits.map(d => d.profit), 1)
+                            return dailyProfits.map((day, i) => {
+                                const height = (day.profit / maxProfit) * 100
+                                return (
+                                    <div
+                                        key={i}
+                                        style={{
+                                            flex: 1,
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'center',
+                                            gap: '4px'
+                                        }}
+                                    >
+                                        <div
+                                            style={{
+                                                width: '100%',
+                                                maxWidth: '40px',
+                                                height: `${Math.max(height, 5)}%`,
+                                                background: day.profit >= 0
+                                                    ? 'linear-gradient(180deg, #10B981 0%, #059669 100%)'
+                                                    : 'linear-gradient(180deg, #EF4444 0%, #DC2626 100%)',
+                                                borderRadius: '4px 4px 0 0',
+                                                transition: 'height 0.3s ease',
+                                                cursor: 'pointer',
+                                                position: 'relative'
+                                            }}
+                                            title={`${new Date(day.date).toLocaleDateString()}: Rs. ${day.profit.toLocaleString()}`}
+                                        >
+                                            <span style={{
+                                                position: 'absolute',
+                                                top: '-20px',
+                                                left: '50%',
+                                                transform: 'translateX(-50%)',
+                                                fontSize: '0.65rem',
+                                                fontWeight: 600,
+                                                color: 'var(--text-primary)',
+                                                whiteSpace: 'nowrap'
+                                            }}>
+                                                {day.profit >= 1000 ? `${(day.profit / 1000).toFixed(0)}k` : day.profit.toFixed(0)}
+                                            </span>
+                                        </div>
+                                        <span style={{
+                                            fontSize: '0.6rem',
+                                            color: 'var(--text-secondary)',
+                                            transform: 'rotate(-45deg)',
+                                            transformOrigin: 'center',
+                                            whiteSpace: 'nowrap'
+                                        }}>
+                                            {new Date(day.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                        </span>
+                                    </div>
+                                )
+                            })
+                        })()}
+                    </div>
+                </div>
+            )}
 
             {/* Reports Table */}
             <div className="card">
