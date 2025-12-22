@@ -101,19 +101,46 @@ const StockCheck = () => {
         setMessage({ type: '', text: '' })
 
         try {
-            let code = verifyCode.trim().toUpperCase()
+            let inputValue = verifyCode.trim().toUpperCase()
+            let code = ''
+            let stockItem = null
 
-            // If user enters just digits, auto-prepend TDY-
-            if (/^\d{1,4}$/.test(code)) {
-                code = `TDY-${code.padStart(4, '0')}`
-            }
-            // If user enters partial code like "1234", convert to TDY-1234
-            else if (/^\d+$/.test(code)) {
-                code = `TDY-${code.slice(-4).padStart(4, '0')}`
-            }
-            // Normalize code format if it has TDY prefix
-            else if (code.startsWith('TDY') && !code.includes('-')) {
-                code = `TDY-${code.slice(3).padStart(4, '0')}`
+            // Check if input is an IMEI (typically 15 digits)
+            if (/^\d{14,15}$/.test(inputValue)) {
+                // Lookup by IMEI
+                stockItem = stocks.find(s => s.imei === inputValue || s.imei === verifyCode.trim())
+                if (!stockItem) {
+                    setMessage({ type: 'error', text: `IMEI ${inputValue} not found in inventory!` })
+                    setVerifyCode('')
+                    setVerifying(false)
+                    return
+                }
+                code = stockItem.code.toUpperCase()
+            } else {
+                // Process as TDY code
+                code = inputValue
+
+                // If user enters just digits, auto-prepend TDY-
+                if (/^\d{1,4}$/.test(code)) {
+                    code = `TDY-${code.padStart(4, '0')}`
+                }
+                // If user enters partial code like "1234", convert to TDY-1234
+                else if (/^\d+$/.test(code)) {
+                    code = `TDY-${code.slice(-4).padStart(4, '0')}`
+                }
+                // Normalize code format if it has TDY prefix
+                else if (code.startsWith('TDY') && !code.includes('-')) {
+                    code = `TDY-${code.slice(3).padStart(4, '0')}`
+                }
+
+                // Check if code exists in stock
+                stockItem = stocks.find(s => s.code.toUpperCase() === code)
+                if (!stockItem) {
+                    setMessage({ type: 'error', text: `${code} not found in inventory!` })
+                    setVerifyCode('')
+                    setVerifying(false)
+                    return
+                }
             }
 
             const verifiedCodes = activeSession.verified_codes || []
@@ -121,15 +148,6 @@ const StockCheck = () => {
             // Check if already verified
             if (verifiedCodes.includes(code)) {
                 setMessage({ type: 'warning', text: `${code} already verified!` })
-                setVerifyCode('')
-                setVerifying(false)
-                return
-            }
-
-            // Check if code exists in stock
-            const stockItem = stocks.find(s => s.code.toUpperCase() === code)
-            if (!stockItem) {
-                setMessage({ type: 'error', text: `${code} not found in inventory!` })
                 setVerifyCode('')
                 setVerifying(false)
                 return
@@ -328,7 +346,7 @@ const StockCheck = () => {
                                 type="text"
                                 className="form-input"
                                 style={{ paddingLeft: '2.75rem' }}
-                                placeholder="Enter last 4 digits (e.g., 1234)"
+                                placeholder="Enter TDY code (e.g., 1234) or full IMEI"
                                 value={verifyCode}
                                 onChange={(e) => setVerifyCode(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && verifyItem()}

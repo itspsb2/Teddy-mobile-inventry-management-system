@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { jsPDF } from 'jspdf'
 import 'jspdf-autotable'
+import ProfitTrendChart from '../components/ProfitTrendChart'
 import {
     FileText,
     Calendar,
@@ -13,21 +15,47 @@ import {
     Phone,
     Package,
     Users,
-    BarChart3
+    Edit2
 } from 'lucide-react'
 
 const Reports = () => {
     const { isAdmin } = useAuth()
+    const navigate = useNavigate()
     const [reports, setReports] = useState([])
     const [loading, setLoading] = useState(true)
     const [selectedReport, setSelectedReport] = useState(null)
 
-    // Date range state - default to current month
+    // Date range state - load from localStorage if available
     const now = new Date()
     const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]
     const today = now.toISOString().split('T')[0]
-    const [startDate, setStartDate] = useState(firstDayOfMonth)
-    const [endDate, setEndDate] = useState(today)
+    const [startDate, setStartDate] = useState(() => {
+        const saved = localStorage.getItem('reportsDateRange')
+        if (saved) {
+            try {
+                return JSON.parse(saved).start || firstDayOfMonth
+            } catch {
+                return firstDayOfMonth
+            }
+        }
+        return firstDayOfMonth
+    })
+    const [endDate, setEndDate] = useState(() => {
+        const saved = localStorage.getItem('reportsDateRange')
+        if (saved) {
+            try {
+                return JSON.parse(saved).end || today
+            } catch {
+                return today
+            }
+        }
+        return today
+    })
+
+    // Save date range to localStorage when changed
+    useEffect(() => {
+        localStorage.setItem('reportsDateRange', JSON.stringify({ start: startDate, end: endDate }))
+    }, [startDate, endDate])
 
     useEffect(() => {
         fetchReports()
@@ -283,7 +311,6 @@ const Reports = () => {
                     <div className="stat-content">
                         <h3>Thabrew Share</h3>
                         <p className="stat-value">Rs. {dateRangeStats.thabrewTotal.toLocaleString()}</p>
-                        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Kelan × 4</span>
                     </div>
                 </div>
 
@@ -298,73 +325,13 @@ const Reports = () => {
                 </div>
             </div>
 
-            {/* Day-by-Day Profit Chart */}
-            {dailyProfits.length > 0 && (
-                <div className="card mb-6">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-                        <BarChart3 size={20} style={{ color: 'var(--primary)' }} />
-                        <h3 style={{ margin: 0, fontWeight: 600 }}>Daily Profit Chart</h3>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', height: '200px', padding: '0.5rem 0' }}>
-                        {(() => {
-                            const maxProfit = Math.max(...dailyProfits.map(d => d.profit), 1)
-                            return dailyProfits.map((day, i) => {
-                                const height = (day.profit / maxProfit) * 100
-                                return (
-                                    <div
-                                        key={i}
-                                        style={{
-                                            flex: 1,
-                                            display: 'flex',
-                                            flexDirection: 'column',
-                                            alignItems: 'center',
-                                            gap: '4px'
-                                        }}
-                                    >
-                                        <div
-                                            style={{
-                                                width: '100%',
-                                                maxWidth: '40px',
-                                                height: `${Math.max(height, 5)}%`,
-                                                background: day.profit >= 0
-                                                    ? 'linear-gradient(180deg, #10B981 0%, #059669 100%)'
-                                                    : 'linear-gradient(180deg, #EF4444 0%, #DC2626 100%)',
-                                                borderRadius: '4px 4px 0 0',
-                                                transition: 'height 0.3s ease',
-                                                cursor: 'pointer',
-                                                position: 'relative'
-                                            }}
-                                            title={`${new Date(day.date).toLocaleDateString()}: Rs. ${day.profit.toLocaleString()}`}
-                                        >
-                                            <span style={{
-                                                position: 'absolute',
-                                                top: '-20px',
-                                                left: '50%',
-                                                transform: 'translateX(-50%)',
-                                                fontSize: '0.65rem',
-                                                fontWeight: 600,
-                                                color: 'var(--text-primary)',
-                                                whiteSpace: 'nowrap'
-                                            }}>
-                                                {day.profit >= 1000 ? `${(day.profit / 1000).toFixed(0)}k` : day.profit.toFixed(0)}
-                                            </span>
-                                        </div>
-                                        <span style={{
-                                            fontSize: '0.6rem',
-                                            color: 'var(--text-secondary)',
-                                            transform: 'rotate(-45deg)',
-                                            transformOrigin: 'center',
-                                            whiteSpace: 'nowrap'
-                                        }}>
-                                            {new Date(day.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                                        </span>
-                                    </div>
-                                )
-                            })
-                        })()}
-                    </div>
-                </div>
-            )}
+            {/* Day-by-Day Profit Chart - Multi-line (Phone, Accessory, Total) */}
+            <ProfitTrendChart
+                title="Daily Profit Trend"
+                startDate={startDate}
+                endDate={endDate}
+                height={280}
+            />
 
             {/* Reports Table */}
             <div className="card">
@@ -422,6 +389,15 @@ const Reports = () => {
                                                     >
                                                         <Download size={14} />
                                                     </button>
+                                                    {isAdmin && (
+                                                        <button
+                                                            className="btn btn-sm btn-secondary"
+                                                            onClick={() => navigate('/profit', { state: { editReport: report } })}
+                                                            title="Edit Report"
+                                                        >
+                                                            <Edit2 size={14} />
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </td>
                                         </tr>

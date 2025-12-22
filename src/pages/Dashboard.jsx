@@ -1,21 +1,19 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import {
     Package,
-    TrendingUp,
     DollarSign,
-    ShoppingCart,
-    ArrowRight,
-    AlertCircle
+    ArrowRight
 } from 'lucide-react'
+import ProfitTrendChart from '../components/ProfitTrendChart'
 
 const Dashboard = () => {
+    const navigate = useNavigate()
     const [stats, setStats] = useState({
         totalStock: 0,
         kelanBalance: 0
     })
-    const [recentSales, setRecentSales] = useState([])
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
@@ -28,13 +26,6 @@ const Dashboard = () => {
             const { data: stocks } = await supabase.from('stocks').select('*')
             const inStock = stocks?.filter(s => s.state === 'in_stock').length || 0
 
-            // Fetch sold stocks for recent sales
-            const { data: soldStocks } = await supabase
-                .from('sold_stocks')
-                .select('*')
-                .order('sell_date', { ascending: false })
-                .limit(5)
-
             // Fetch Kelan balance
             const { data: reports } = await supabase.from('profit_reports').select('kelan_total')
             const { data: payments } = await supabase.from('kelan_payments').select('amount')
@@ -46,9 +37,6 @@ const Dashboard = () => {
                 totalStock: inStock,
                 kelanBalance: totalKelanEarned - totalKelanPaid
             })
-
-            // Recent sales
-            setRecentSales(soldStocks || [])
         } catch (error) {
             console.error('Dashboard error:', error)
         } finally {
@@ -73,9 +61,21 @@ const Dashboard = () => {
                 </div>
             </div>
 
-            {/* Stats Grid */}
+            {/* Stats Grid - Clickable Cards */}
             <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))' }}>
-                <div className="stat-card">
+                <div
+                    className="stat-card"
+                    style={{ cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s' }}
+                    onClick={() => navigate('/stock')}
+                    onMouseEnter={e => {
+                        e.currentTarget.style.transform = 'translateY(-2px)'
+                        e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)'
+                    }}
+                    onMouseLeave={e => {
+                        e.currentTarget.style.transform = 'translateY(0)'
+                        e.currentTarget.style.boxShadow = ''
+                    }}
+                >
                     <div className="stat-icon" style={{ background: 'var(--primary-light)' }}>
                         <Package size={24} style={{ color: 'var(--primary)' }} />
                     </div>
@@ -85,7 +85,19 @@ const Dashboard = () => {
                     </div>
                 </div>
 
-                <div className="stat-card">
+                <div
+                    className="stat-card"
+                    style={{ cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s' }}
+                    onClick={() => navigate('/profit', { state: { activeTab: 'payments' } })}
+                    onMouseEnter={e => {
+                        e.currentTarget.style.transform = 'translateY(-2px)'
+                        e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)'
+                    }}
+                    onMouseLeave={e => {
+                        e.currentTarget.style.transform = 'translateY(0)'
+                        e.currentTarget.style.boxShadow = ''
+                    }}
+                >
                     <div className="stat-icon" style={{ background: stats.kelanBalance > 0 ? 'var(--warning-light)' : 'var(--success-light)' }}>
                         <DollarSign size={24} style={{ color: stats.kelanBalance > 0 ? 'var(--warning)' : 'var(--success)' }} />
                     </div>
@@ -98,89 +110,31 @@ const Dashboard = () => {
                 </div>
             </div>
 
-            {/* Kelan Balance Alert */}
-            {stats.kelanBalance > 0 && (
-                <div className="alert alert-warning mb-6">
-                    <AlertCircle size={20} />
-                    <div>
-                        <strong>Outstanding Kelan Balance:</strong> Rs. {stats.kelanBalance.toLocaleString()}
-                        <Link to="/profit" style={{ marginLeft: '0.5rem', color: 'inherit', fontWeight: 500 }}>
-                            View Details →
-                        </Link>
-                    </div>
-                </div>
-            )}
+            {/* Daily Profit Trend Chart - Reusable Component */}
+            <ProfitTrendChart
+                title="Daily Profit Trend (Last 14 Reports)"
+                maxReports={14}
+                height={280}
+            />
 
-            {/* Quick Actions & Recent Sales */}
-            <div className="grid-2">
-                {/* Quick Actions */}
-                <div className="card">
-                    <div className="card-header">
-                        <h2 className="card-title">Quick Actions</h2>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                        <Link to="/stock" className="btn btn-outline w-full" style={{ justifyContent: 'space-between' }}>
-                            <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <Package size={18} /> Manage Stock
-                            </span>
-                            <ArrowRight size={18} />
-                        </Link>
-                        <Link to="/profit" className="btn btn-outline w-full" style={{ justifyContent: 'space-between' }}>
-                            <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <TrendingUp size={18} /> Profit Calculator
-                            </span>
-                            <ArrowRight size={18} />
-                        </Link>
-                        <Link to="/stock-check" className="btn btn-outline w-full" style={{ justifyContent: 'space-between' }}>
-                            <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <ShoppingCart size={18} /> Stock Check
-                            </span>
-                            <ArrowRight size={18} />
-                        </Link>
-                    </div>
+            {/* Quick Actions */}
+            <div className="card">
+                <div className="card-header">
+                    <h2 className="card-title">Quick Actions</h2>
                 </div>
-
-                {/* Recent Sales */}
-                <div className="card">
-                    <div className="card-header">
-                        <h2 className="card-title">Recent Sales</h2>
-                        <Link to="/stock" className="btn btn-sm btn-outline">View All</Link>
-                    </div>
-                    {recentSales.length === 0 ? (
-                        <div className="empty-state" style={{ padding: '2rem' }}>
-                            <ShoppingCart size={32} />
-                            <p>No sales yet</p>
-                        </div>
-                    ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                            {recentSales.map(sale => (
-                                <div
-                                    key={sale.id}
-                                    style={{
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        alignItems: 'center',
-                                        padding: '0.75rem',
-                                        background: 'var(--bg-tertiary)',
-                                        borderRadius: 'var(--radius-md)'
-                                    }}
-                                >
-                                    <div>
-                                        <div style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{sale.phone}</div>
-                                        <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>{sale.code}</div>
-                                    </div>
-                                    <div style={{ textAlign: 'right' }}>
-                                        <div style={{ fontWeight: 600, color: 'var(--success)' }}>
-                                            +Rs. {parseFloat(sale.profit || 0).toLocaleString()}
-                                        </div>
-                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
-                                            {sale.sell_date ? new Date(sale.sell_date).toLocaleDateString() : ''}
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    <button onClick={() => navigate('/stock')} className="btn btn-outline w-full" style={{ justifyContent: 'space-between' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <Package size={18} /> Manage Stock
+                        </span>
+                        <ArrowRight size={18} />
+                    </button>
+                    <button onClick={() => navigate('/profit')} className="btn btn-outline w-full" style={{ justifyContent: 'space-between' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <DollarSign size={18} /> Profit Calculator
+                        </span>
+                        <ArrowRight size={18} />
+                    </button>
                 </div>
             </div>
         </div>
@@ -188,4 +142,3 @@ const Dashboard = () => {
 }
 
 export default Dashboard
-

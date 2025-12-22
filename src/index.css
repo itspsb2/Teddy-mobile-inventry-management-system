@@ -457,11 +457,26 @@ body {
     border-radius: var(--radius-lg);
     border: 1px solid var(--border-light);
     padding: 1.5rem;
-    transition: all var(--transition-slow);
+    transition: all var(--transition-base);
+    animation: cardFadeInUp 0.4s ease-out forwards;
+}
+
+@keyframes cardFadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .card:hover {
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-3px);
+    border-color: var(--border);
 }
 
 .card-header {
@@ -815,6 +830,29 @@ body {
     align-items: center;
     gap: 1rem;
     transition: all var(--transition-fast);
+    animation: cardFadeInUp 0.4s ease-out forwards;
+    opacity: 0;
+}
+
+/* Staggered animation delays for stat cards */
+.stat-card:nth-child(1) {
+    animation-delay: 0s;
+}
+
+.stat-card:nth-child(2) {
+    animation-delay: 0.1s;
+}
+
+.stat-card:nth-child(3) {
+    animation-delay: 0.2s;
+}
+
+.stat-card:nth-child(4) {
+    animation-delay: 0.3s;
+}
+
+.stat-card:nth-child(5) {
+    animation-delay: 0.4s;
 }
 
 .stat-card:hover {
@@ -1138,8 +1176,78 @@ body {
         gap: 1rem;
     }
 }
+
 /* Dark Mode Date Picker Icon Fix */
 [data-theme='dark'] ::-webkit-calendar-picker-indicator {
     filter: invert(1);
     cursor: pointer;
+}
+
+/* ============================================
+   ALERTS - Success/Error Messages
+   ============================================ */
+.alert {
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-md);
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.alert-success {
+    background: var(--success-light);
+    color: var(--success);
+    border: 1px solid var(--success);
+}
+
+.alert-error {
+    background: var(--danger-light);
+    color: var(--danger);
+    border: 1px solid var(--danger);
+}
+
+/* ============================================
+   SPINNER ANIMATION
+   ============================================ */
+.spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ============================================
+   BTN-SUCCESS VARIANT
+   ============================================ */
+.btn-success {
+    background: var(--success);
+    color: white;
+    border: none;
+}
+
+.btn-success:hover:not(:disabled) {
+    background: #2d9348;
+}
+
+.btn-success:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* ============================================
+   BADGE-INFO VARIANT
+   ============================================ */
+.badge-info {
+    background: var(--primary-light);
+    color: var(--primary);
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 500;
 }

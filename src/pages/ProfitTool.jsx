@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { jsPDF } from 'jspdf'
 import 'jspdf-autotable'
@@ -22,7 +23,20 @@ import {
 } from 'lucide-react'
 
 const ProfitTool = () => {
-    const [activeTab, setActiveTab] = useState('calculations')
+    const location = useLocation()
+    const [activeTab, setActiveTab] = useState(() => {
+        // Check if we were navigated here with a specific tab
+        return location.state?.activeTab || 'calculations'
+    })
+
+    // Update tab when navigating from dashboard
+    useEffect(() => {
+        if (location.state?.activeTab) {
+            setActiveTab(location.state.activeTab)
+            // Clear the state to prevent re-setting on refresh
+            window.history.replaceState({}, document.title)
+        }
+    }, [location.state])
 
     return (
         <div>
@@ -56,6 +70,9 @@ const ProfitTool = () => {
 }
 
 const ProfitCalculations = () => {
+    const location = useLocation()
+    const navigate = useNavigate()
+
     const [phoneData, setPhoneData] = useState([])
     const [accessoryData, setAccessoryData] = useState([])
     const [thabrewData, setThabrewData] = useState([])
@@ -64,6 +81,10 @@ const ProfitCalculations = () => {
     const [manualKelan, setManualKelan] = useState([])
     const [reportDate, setReportDate] = useState(new Date().toISOString().split('T')[0])
     const [saving, setSaving] = useState(false)
+
+    // Edit mode state
+    const [editingReportId, setEditingReportId] = useState(null)
+    const [isEditMode, setIsEditMode] = useState(false)
 
     const [phoneForm, setPhoneForm] = useState({
         ownerType: 'TB', // 'TB' or 'Other'
@@ -83,6 +104,41 @@ const ProfitCalculations = () => {
 
     const [editPhoneIdx, setEditPhoneIdx] = useState(null)
     const [editAccessoryIdx, setEditAccessoryIdx] = useState(null)
+
+    // Load report data if editing
+    useEffect(() => {
+        if (location.state?.editReport) {
+            const report = location.state.editReport
+            setIsEditMode(true)
+            setEditingReportId(report.id)
+            setReportDate(report.report_date)
+
+            // Load phone entries
+            if (report.phone_entries && Array.isArray(report.phone_entries)) {
+                setPhoneData(report.phone_entries)
+            }
+
+            // Load accessory entries
+            if (report.accessory_entries && Array.isArray(report.accessory_entries)) {
+                setAccessoryData(report.accessory_entries)
+            }
+
+            // Load thabrew entries as manual entries
+            if (report.thabrew_entries && Array.isArray(report.thabrew_entries)) {
+                const manualTh = report.thabrew_entries.filter(t => t.isManual)
+                setManualThabrew(manualTh)
+            }
+
+            // Load kelan entries as manual entries
+            if (report.kelan_entries && Array.isArray(report.kelan_entries)) {
+                const manualKe = report.kelan_entries.filter(k => k.isManual)
+                setManualKelan(manualKe)
+            }
+
+            // Clear the location state to prevent reload on navigation
+            window.history.replaceState({}, document.title)
+        }
+    }, [location.state])
 
     useEffect(() => {
         updateOwnerTables()
@@ -406,18 +462,33 @@ const ProfitCalculations = () => {
                 th: acc.th + curr.thabrew, ke: acc.ke + curr.kelan
             }), { rev: 0, cost: 0, prof: 0, th: 0, ke: 0 })
 
-            const { error } = await supabase.from('profit_reports').insert([{
+            const reportData = {
                 report_date: reportDate,
                 phone_total_revenue: pTotals.rev, phone_total_cost: pTotals.cost, phone_total_profit: pTotals.prof,
                 accessory_total_revenue: aTotals.rev, accessory_total_cost: aTotals.cost, accessory_total_profit: aTotals.prof,
                 thabrew_phone_profit: pTotals.th, thabrew_accessory_profit: aTotals.th, thabrew_total: thTotal,
                 kelan_phone_profit: pTotals.ke, kelan_accessory_profit: aTotals.ke, kelan_total: keTotal,
                 phone_entries: phoneData, accessory_entries: accessoryData, thabrew_entries: thabrewData, kelan_entries: kelanData
-            }])
+            }
+
+            let error
+            if (isEditMode && editingReportId) {
+                // Update existing report
+                const result = await supabase
+                    .from('profit_reports')
+                    .update(reportData)
+                    .eq('id', editingReportId)
+                error = result.error
+            } else {
+                // Insert new report
+                const result = await supabase.from('profit_reports').insert([reportData])
+                error = result.error
+            }
 
             if (error) throw error
 
-            // Auto-move matching stocks to Sold table
+            // Move stocks to sold_stocks for BOTH new AND edited reports
+            // This ensures any phones in the report that still exist in stocks are moved
             let movedCount = 0
             let skippedCount = 0
 
@@ -459,7 +530,7 @@ const ProfitCalculations = () => {
                             continue
                         }
                         if (!stockItem) {
-                            console.log(`Stock not found for entry, skipping...`)
+                            console.log(`Stock not found for entry (may already be sold), skipping...`)
                             skippedCount++
                             continue
                         }
@@ -529,12 +600,21 @@ const ProfitCalculations = () => {
                 }
             }
 
-            console.log(`Stock movement complete: ${movedCount} moved, ${skippedCount} skipped`)
+            console.log(`Stock movement complete: ${movedCount} moved to sold, ${skippedCount} skipped`)
 
             // Generate PDF after successful save
             generatePDF()
 
-            alert(`Report saved! PDF generated!\n\nStock movement: ${movedCount} moved to sold, ${skippedCount} skipped.\n\nCheck browser console (F12) for details.`)
+            if (isEditMode) {
+                alert(`Report updated successfully! PDF generated!\n\nStock movement: ${movedCount} moved to sold, ${skippedCount} skipped.\n\nCheck browser console (F12) for details.`)
+                // Reset edit mode and navigate back to reports
+                setIsEditMode(false)
+                setEditingReportId(null)
+                navigate('/reports')
+            } else {
+                alert(`Report saved! PDF generated!\n\nStock movement: ${movedCount} moved to sold, ${skippedCount} skipped.\n\nCheck browser console (F12) for details.`)
+            }
+
             setPhoneData([])
             setAccessoryData([])
             setManualThabrew([])
@@ -953,11 +1033,21 @@ const KelanPayments = () => {
     })
     const [saving, setSaving] = useState(false)
 
-    // Payslip States
+    // Payslip States - Load from localStorage if available
     const date = new Date()
     const firstDay = new Date(date.getFullYear(), date.getMonth(), 1).toISOString().split('T')[0]
     const currentDay = date.toISOString().split('T')[0]
-    const [payslipRange, setPayslipRange] = useState({ start: firstDay, end: currentDay })
+    const [payslipRange, setPayslipRange] = useState(() => {
+        const saved = localStorage.getItem('kelanPayslipRange')
+        if (saved) {
+            try {
+                return JSON.parse(saved)
+            } catch {
+                return { start: firstDay, end: currentDay }
+            }
+        }
+        return { start: firstDay, end: currentDay }
+    })
     const [generatingPayslip, setGeneratingPayslip] = useState(false)
 
     useEffect(() => { fetchData() }, [])
@@ -1113,42 +1203,15 @@ const KelanPayments = () => {
 
     if (loading) return <div className="loading-container"><div className="spinner"></div></div>
 
+    // Calculate range-specific totals for the summary cards
+    const getRangeTotals = () => {
+        // This will be calculated when payslip data is fetched
+        return { earned: 0, paid: 0, balance: 0 }
+    }
+
     return (
         <div>
-            {/* Summary Cards */}
-            <div className="stats-grid mb-6">
-                <div className="stat-card">
-                    <div className="stat-icon" style={{ background: 'var(--success-light)' }}>
-                        <DollarSign size={24} style={{ color: 'var(--success)' }} />
-                    </div>
-                    <div className="stat-content">
-                        <h3>Total Earned</h3>
-                        <p className="stat-value">Rs. {summary.earned.toLocaleString()}</p>
-                    </div>
-                </div>
-                <div className="stat-card">
-                    <div className="stat-icon" style={{ background: 'var(--primary-light)' }}>
-                        <CreditCard size={24} style={{ color: 'var(--primary)' }} />
-                    </div>
-                    <div className="stat-content">
-                        <h3>Total Paid</h3>
-                        <p className="stat-value">Rs. {summary.paid.toLocaleString()}</p>
-                    </div>
-                </div>
-                <div className="stat-card">
-                    <div className="stat-icon" style={{ background: summary.balance > 0 ? 'var(--warning-light)' : 'var(--success-light)' }}>
-                        <Wallet size={24} style={{ color: summary.balance > 0 ? 'var(--warning)' : 'var(--success)' }} />
-                    </div>
-                    <div className="stat-content">
-                        <h3>Balance Due</h3>
-                        <p className="stat-value" style={{ color: summary.balance > 0 ? 'var(--warning)' : 'var(--success)' }}>
-                            Rs. {summary.balance.toLocaleString()}
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            {/* Payslip Generator Card */}
+            {/* Generate Payslip Card - Now includes summary cards */}
             <div className="card mb-6">
                 <div className="card-header">
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -1160,24 +1223,49 @@ const KelanPayments = () => {
                         </div>
                         <div>
                             <h2 className="card-title">Generate Payslip</h2>
-                            <p className="text-sm text-muted">Download detailed earnings report for a specific period</p>
+                            <p className="text-sm text-muted">View earnings summary and download detailed report for a specific period</p>
                         </div>
                     </div>
                 </div>
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'end', flexWrap: 'wrap' }}>
+
+                {/* Date Range Selector */}
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'end', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
                     <div style={{ flex: 1, minWidth: '200px' }}>
                         <label className="form-label">Start Date</label>
-                        <input type="date" className="form-input" value={payslipRange.start} onChange={e => setPayslipRange({ ...payslipRange, start: e.target.value })} />
+                        <input
+                            type="date"
+                            className="form-input"
+                            value={payslipRange.start}
+                            onChange={e => {
+                                const newRange = { ...payslipRange, start: e.target.value }
+                                setPayslipRange(newRange)
+                                localStorage.setItem('kelanPayslipRange', JSON.stringify(newRange))
+                            }}
+                        />
                     </div>
                     <div style={{ flex: 1, minWidth: '200px' }}>
                         <label className="form-label">End Date</label>
-                        <input type="date" className="form-input" value={payslipRange.end} onChange={e => setPayslipRange({ ...payslipRange, end: e.target.value })} />
+                        <input
+                            type="date"
+                            className="form-input"
+                            value={payslipRange.end}
+                            onChange={e => {
+                                const newRange = { ...payslipRange, end: e.target.value }
+                                setPayslipRange(newRange)
+                                localStorage.setItem('kelanPayslipRange', JSON.stringify(newRange))
+                            }}
+                        />
                     </div>
-                    <button className="btn btn-secondary" onClick={generatePayslip} disabled={generatingPayslip}>
-                        {generatingPayslip ? <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> : <Download size={18} />}
-                        Download Payslip PDF
-                    </button>
                 </div>
+
+                {/* Summary Cards - Filtered by date range */}
+                <RangeSummaryCards payslipRange={payslipRange} />
+
+                {/* Download Button */}
+                <button className="btn btn-secondary w-full" onClick={generatePayslip} disabled={generatingPayslip} style={{ marginTop: '1rem' }}>
+                    {generatingPayslip ? <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> : <Download size={18} />}
+                    Download Payslip PDF
+                </button>
             </div>
 
             <div className="grid-2">
@@ -1260,6 +1348,92 @@ const KelanPayments = () => {
                             </tbody>
                         </table>
                     </div>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+// Sub-component for range-filtered summary cards
+const RangeSummaryCards = ({ payslipRange }) => {
+    const [rangeSummary, setRangeSummary] = useState({ earned: 0, paid: 0, balance: 0 })
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+        const fetchRangeData = async () => {
+            setLoading(true)
+            try {
+                // Fetch earnings in range
+                const { data: earningsData } = await supabase
+                    .from('profit_reports')
+                    .select('kelan_total')
+                    .gte('report_date', payslipRange.start)
+                    .lte('report_date', payslipRange.end)
+
+                // Fetch payments in range
+                const { data: paymentsData } = await supabase
+                    .from('kelan_payments')
+                    .select('amount')
+                    .gte('payment_date', payslipRange.start)
+                    .lte('payment_date', payslipRange.end)
+
+                const earned = earningsData?.reduce((sum, r) => sum + (parseFloat(r.kelan_total) || 0), 0) || 0
+                const paid = paymentsData?.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0) || 0
+
+                setRangeSummary({ earned, paid, balance: earned - paid })
+            } catch (error) {
+                console.error('Error fetching range data:', error)
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        fetchRangeData()
+    }, [payslipRange.start, payslipRange.end])
+
+    if (loading) {
+        return (
+            <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+                {[1, 2, 3].map(i => (
+                    <div key={i} className="stat-card" style={{ opacity: 0.5 }}>
+                        <div className="stat-content" style={{ textAlign: 'center' }}>
+                            <p>Loading...</p>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        )
+    }
+
+    return (
+        <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+            <div className="stat-card">
+                <div className="stat-icon" style={{ background: 'var(--success-light)' }}>
+                    <DollarSign size={24} style={{ color: 'var(--success)' }} />
+                </div>
+                <div className="stat-content">
+                    <h3>Earned (Period)</h3>
+                    <p className="stat-value">Rs. {rangeSummary.earned.toLocaleString()}</p>
+                </div>
+            </div>
+            <div className="stat-card">
+                <div className="stat-icon" style={{ background: 'var(--primary-light)' }}>
+                    <CreditCard size={24} style={{ color: 'var(--primary)' }} />
+                </div>
+                <div className="stat-content">
+                    <h3>Paid (Period)</h3>
+                    <p className="stat-value">Rs. {rangeSummary.paid.toLocaleString()}</p>
+                </div>
+            </div>
+            <div className="stat-card">
+                <div className="stat-icon" style={{ background: rangeSummary.balance > 0 ? 'var(--warning-light)' : 'var(--success-light)' }}>
+                    <Wallet size={24} style={{ color: rangeSummary.balance > 0 ? 'var(--warning)' : 'var(--success)' }} />
+                </div>
+                <div className="stat-content">
+                    <h3>Balance (Period)</h3>
+                    <p className="stat-value" style={{ color: rangeSummary.balance > 0 ? 'var(--warning)' : 'var(--success)' }}>
+                        Rs. {rangeSummary.balance.toLocaleString()}
+                    </p>
                 </div>
             </div>
         </div>
