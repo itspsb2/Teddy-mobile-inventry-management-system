@@ -358,7 +358,7 @@ const StockCheck = () => {
                             onClick={verifyItem}
                             disabled={verifying || !verifyCode.trim()}
                         >
-                            {verifying ? <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> : <CheckCircle size={18} />}
+                            {verifying ? <Loader2 size={18} className="spin" /> : <CheckCircle size={18} />}
                             Verify
                         </button>
                     </div>

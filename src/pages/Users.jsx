@@ -400,7 +400,7 @@ const Users = () => {
                                     Cancel
                                 </button>
                                 <button type="submit" className="btn btn-primary" disabled={saving}>
-                                    {saving ? <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> : <Plus size={18} />}
+                                    {saving ? <Loader2 size={18} className="spin" /> : <Plus size={18} />}
                                     Create User
                                 </button>
                             </div>
@@ -478,7 +478,7 @@ const Users = () => {
                                     Cancel
                                 </button>
                                 <button type="submit" className="btn btn-primary" disabled={saving}>
-                                    {saving ? <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> : null}
+                                    {saving ? <Loader2 size={18} className="spin" /> : null}
                                     Save Changes
                                 </button>
                             </div>

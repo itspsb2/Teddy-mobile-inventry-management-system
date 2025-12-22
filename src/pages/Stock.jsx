@@ -1126,7 +1126,7 @@ const Stock = () => {
                                     Cancel
                                 </button>
                                 <button type="submit" className="btn btn-primary" disabled={saving}>
-                                    {saving ? <Loader2 size={18} className="spinner" /> : <Plus size={18} />}
+                                    {saving ? <Loader2 size={18} className="spin" /> : <Plus size={18} />}
                                     Add Phone
                                 </button>
                             </div>
@@ -1388,7 +1388,7 @@ const Stock = () => {
                                     Cancel
                                 </button>
                                 <button type="submit" className="btn btn-primary" disabled={saving}>
-                                    {saving ? <Loader2 size={18} className="spinner" /> : null}
+                                    {saving ? <Loader2 size={18} className="spin" /> : null}
                                     Save Changes
                                 </button>
                             </div>

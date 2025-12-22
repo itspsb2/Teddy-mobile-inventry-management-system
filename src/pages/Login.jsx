@@ -44,7 +44,7 @@ const Login = () => {
         return (
             <div className="login-page">
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Loader2 size={40} style={{ animation: 'spin 1s linear infinite', color: 'var(--primary)' }} />
+                    <Loader2 size={40} className="spin" style={{ color: 'var(--primary)' }} />
                 </div>
             </div>
         )
@@ -143,7 +143,7 @@ const Login = () => {
                     >
                         {loading ? (
                             <>
-                                <Loader2 size={20} style={{ animation: 'spin 1s linear infinite' }} />
+                                <Loader2 size={20} className="spin" />
                                 Signing in...
                             </>
                         ) : (

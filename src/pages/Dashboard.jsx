@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../contexts/AuthContext'
 import {
     Package,
     DollarSign,
@@ -9,6 +10,7 @@ import {
 import ProfitTrendChart from '../components/ProfitTrendChart'
 
 const Dashboard = () => {
+    const { isAdmin } = useAuth()
     const navigate = useNavigate()
     const [stats, setStats] = useState({
         totalStock: 0,
@@ -110,12 +112,14 @@ const Dashboard = () => {
                 </div>
             </div>
 
-            {/* Daily Profit Trend Chart - Reusable Component */}
-            <ProfitTrendChart
-                title="Daily Profit Trend (Last 14 Reports)"
-                maxReports={14}
-                height={280}
-            />
+            {/* Daily Profit Trend Chart - Admin Only */}
+            {isAdmin() && (
+                <ProfitTrendChart
+                    title="Daily Profit Trend (Last 14 Reports)"
+                    maxReports={14}
+                    height={280}
+                />
+            )}
 
             {/* Quick Actions */}
             <div className="card">

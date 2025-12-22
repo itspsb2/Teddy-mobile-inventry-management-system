@@ -12,20 +12,8 @@ const ProtectedRoute = ({ requireAdmin = false }) => {
 
     if (loading) {
         return (
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                minHeight: '100vh',
-                background: 'var(--bg-secondary)'
-            }}>
-                <Loader2
-                    size={40}
-                    style={{
-                        animation: 'spin 1s linear infinite',
-                        color: 'var(--primary)'
-                    }}
-                />
+            <div className="loading-container" style={{ minHeight: '100vh', background: 'var(--bg-secondary)' }}>
+                <Loader2 size={40} className="spin" style={{ color: 'var(--primary)' }} />
             </div>
         )
     }

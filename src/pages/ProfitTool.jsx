@@ -1014,7 +1014,7 @@ const ProfitCalculations = () => {
             {/* Footer Actions */}
             <div className="card" style={{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
                 <button className="btn btn-primary btn-lg" onClick={saveReport} disabled={saving}>
-                    {saving ? <Loader2 size={20} style={{ animation: 'spin 1s linear infinite' }} /> : <FileText size={20} />}
+                    {saving ? <Loader2 size={20} className="spin" /> : <FileText size={20} />}
                     Save & Generate PDF Report
                 </button>
             </div>
@@ -1263,7 +1263,7 @@ const KelanPayments = () => {
 
                 {/* Download Button */}
                 <button className="btn btn-secondary w-full" onClick={generatePayslip} disabled={generatingPayslip} style={{ marginTop: '1rem' }}>
-                    {generatingPayslip ? <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> : <Download size={18} />}
+                    {generatingPayslip ? <Loader2 size={18} className="spin" /> : <Download size={18} />}
                     Download Payslip PDF
                 </button>
             </div>
@@ -1297,7 +1297,7 @@ const KelanPayments = () => {
                             <input className="form-input" placeholder="Payment notes..." value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
                         </div>
                         <button type="submit" className="btn btn-primary w-full" disabled={saving}>
-                            {saving ? <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> : <Plus size={18} />}
+                            {saving ? <Loader2 size={18} className="spin" /> : <Plus size={18} />}
                             Record Payment
                         </button>
                     </form>

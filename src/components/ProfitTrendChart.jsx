@@ -285,21 +285,21 @@ const ProfitTrendChart = ({
                         position: 'absolute',
                         top: '10px',
                         right: '10px',
-                        background: 'white',
+                        background: 'var(--surface)',
                         padding: '0.75rem 1rem',
-                        borderRadius: '8px',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                        border: '1px solid #E5E7EB',
+                        borderRadius: 'var(--radius-md)',
+                        boxShadow: 'var(--shadow-lg)',
+                        border: '1px solid var(--border)',
                         fontSize: '0.875rem',
                         zIndex: 10
                     }}>
                         <div style={{ fontWeight: 600, color: hoveredPoint.color, marginBottom: '0.25rem' }}>
                             {hoveredPoint.name}
                         </div>
-                        <div style={{ color: '#374151' }}>
+                        <div style={{ color: 'var(--text-primary)' }}>
                             Rs. {hoveredPoint.value.toLocaleString()}
                         </div>
-                        <div style={{ color: '#9CA3AF', fontSize: '0.75rem', marginTop: '0.25rem' }}>
+                        <div style={{ color: 'var(--text-tertiary)', fontSize: '0.75rem', marginTop: '0.25rem' }}>
                             {new Date(hoveredPoint.date).toLocaleDateString('en-US', {
                                 weekday: 'short',
                                 month: 'short',

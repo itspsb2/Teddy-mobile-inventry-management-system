@@ -325,13 +325,15 @@ const Reports = () => {
                 </div>
             </div>
 
-            {/* Day-by-Day Profit Chart - Multi-line (Phone, Accessory, Total) */}
-            <ProfitTrendChart
-                title="Daily Profit Trend"
-                startDate={startDate}
-                endDate={endDate}
-                height={280}
-            />
+            {/* Day-by-Day Profit Chart - Admin Only */}
+            {isAdmin() && (
+                <ProfitTrendChart
+                    title="Daily Profit Trend"
+                    startDate={startDate}
+                    endDate={endDate}
+                    height={280}
+                />
+            )}
 
             {/* Reports Table */}
             <div className="card">
