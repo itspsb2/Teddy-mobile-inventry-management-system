@@ -40,17 +40,8 @@ const Reports = () => {
         }
         return firstDayOfMonth
     })
-    const [endDate, setEndDate] = useState(() => {
-        const saved = localStorage.getItem('reportsDateRange')
-        if (saved) {
-            try {
-                return JSON.parse(saved).end || today
-            } catch {
-                return today
-            }
-        }
-        return today
-    })
+    // End date always defaults to current date
+    const [endDate, setEndDate] = useState(today)
 
     // Save date range to localStorage when changed
     useEffect(() => {

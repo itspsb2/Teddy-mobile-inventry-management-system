@@ -149,6 +149,17 @@ const ProfitCalculations = () => {
         return { profit, thabrew: profit * 0.8, kelan: profit * 0.2 }
     }
 
+    // For accessories: if profit is negative, full loss goes to TB only, Kelan gets 0
+    const calculateAccessoryProfitSplit = (revenue, cost) => {
+        const profit = revenue - cost
+        if (profit < 0) {
+            // Loss: full amount goes to Thabrew, Kelan gets 0
+            return { profit, thabrew: profit, kelan: 0 }
+        }
+        // Profit: normal 80/20 split
+        return { profit, thabrew: profit * 0.8, kelan: profit * 0.2 }
+    }
+
     const updateOwnerTables = () => {
         let phoneThabrewTotal = 0, phoneKelanTotal = 0
         let accessoryThabrewTotal = 0, accessoryKelanTotal = 0, accessoryCostTotal = 0
@@ -293,7 +304,7 @@ const ProfitCalculations = () => {
 
         const numRevenue = parseFloat(revenue) || 0
         const numCost = parseFloat(cost) || 0
-        const { profit, thabrew, kelan } = calculateProfitSplit(numRevenue, numCost)
+        const { profit, thabrew, kelan } = calculateAccessoryProfitSplit(numRevenue, numCost)
 
         const entry = { model, revenue: numRevenue, cost: numCost, profit, thabrew, kelan }
 
@@ -1041,7 +1052,9 @@ const KelanPayments = () => {
         const saved = localStorage.getItem('kelanPayslipRange')
         if (saved) {
             try {
-                return JSON.parse(saved)
+                const parsed = JSON.parse(saved)
+                // Always use current date as end, only load start from storage
+                return { start: parsed.start || firstDay, end: currentDay }
             } catch {
                 return { start: firstDay, end: currentDay }
             }
