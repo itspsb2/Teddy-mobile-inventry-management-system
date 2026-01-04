@@ -58,29 +58,10 @@ A modern full-stack Stock Management System built with **React + Vite** and **Su
 
 ## 📦 Installation
 
-### 1. Install Dependencies
 
 ```bash
 npm install
 ```
-
-### 2. Configure Supabase
-
-1. Create a new project at [supabase.com](https://supabase.com)
-2. Go to **Settings > API** and copy your Project URL and anon key
-3. Create `.env` file:
-
-```env
-VITE_SUPABASE_URL=https://your-project-id.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key
-```
-
-### 3. Set Up Database
-
-1. Go to **SQL Editor** in Supabase Dashboard
-2. Run the contents of `supabase-schema.sql`
-
-### 4. Run Development Server
 
 ```bash
 npm run dev
