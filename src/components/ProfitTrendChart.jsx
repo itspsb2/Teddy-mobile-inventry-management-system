@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useId } from 'react'
 import { supabase } from '../lib/supabase'
 import { TrendingUp } from 'lucide-react'
 
@@ -17,6 +17,7 @@ const ProfitTrendChart = ({
     const [chartData, setChartData] = useState([])
     const [loading, setLoading] = useState(true)
     const [hoveredPoint, setHoveredPoint] = useState(null)
+    const chartId = useId()
 
     useEffect(() => {
         fetchChartData()
@@ -68,7 +69,7 @@ const ProfitTrendChart = ({
 
     if (loading) {
         return (
-            <div className="card mb-6">
+            <div className="card chart-card mb-6">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
                     <TrendingUp size={20} style={{ color: 'var(--primary)' }} />
                     <h3 style={{ margin: 0, fontWeight: 600 }}>{title}</h3>
@@ -82,7 +83,7 @@ const ProfitTrendChart = ({
 
     if (chartData.length === 0) {
         return (
-            <div className="card mb-6">
+            <div className="card chart-card mb-6">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
                     <TrendingUp size={20} style={{ color: 'var(--primary)' }} />
                     <h3 style={{ margin: 0, fontWeight: 600 }}>{title}</h3>
@@ -122,17 +123,36 @@ const ProfitTrendChart = ({
     const accessoryPoints = generatePoints('accessoryProfit')
     const totalPoints = generatePoints('totalProfit')
 
-    // Generate smooth SVG path from points
-    const generatePath = (points) => {
+    // Generate smooth SVG path from points (Catmull-Rom to Bezier)
+    const generateSmoothPath = (points) => {
         if (points.length < 2) return ''
-        return points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ')
+        const smoothing = 0.2
+        return points.reduce((path, point, i, arr) => {
+            if (i === 0) return `M ${point.x} ${point.y}`
+            const prev = arr[i - 1]
+            const prevPrev = arr[i - 2] || prev
+            const next = arr[i + 1] || point
+            const cp1x = prev.x + (point.x - prevPrev.x) * smoothing
+            const cp1y = prev.y + (point.y - prevPrev.y) * smoothing
+            const cp2x = point.x - (next.x - prev.x) * smoothing
+            const cp2y = point.y - (next.y - prev.y) * smoothing
+            return `${path} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${point.x} ${point.y}`
+        }, '')
+    }
+
+    const generateAreaPath = (points, baselineY) => {
+        if (points.length < 2) return ''
+        const smoothPath = generateSmoothPath(points)
+        const last = points[points.length - 1]
+        const first = points[0]
+        return `${smoothPath} L ${last.x} ${baselineY} L ${first.x} ${baselineY} Z`
     }
 
     // Series configuration
     const series = [
-        { key: 'phone', name: 'Phone Profit', points: phonePoints, color: '#3B82F6' },
-        { key: 'accessory', name: 'Accessory Profit', points: accessoryPoints, color: '#10B981' },
-        { key: 'total', name: 'Total Profit', points: totalPoints, color: '#EF4444' }
+        { key: 'phone', name: 'Phone Profit', points: phonePoints, color: 'var(--chart-phone)', gradient: `url(#${chartId}-phone-line)` },
+        { key: 'accessory', name: 'Accessory Profit', points: accessoryPoints, color: 'var(--chart-accessory)', gradient: `url(#${chartId}-accessory-line)` },
+        { key: 'total', name: 'Total Profit', points: totalPoints, color: 'var(--chart-total)', gradient: `url(#${chartId}-total-line)` }
     ]
 
     // Y-axis labels (5 ticks)
@@ -145,29 +165,26 @@ const ProfitTrendChart = ({
     const xLabelStep = Math.ceil(chartData.length / 7)
     const xLabels = chartData.filter((_, i) => i % xLabelStep === 0 || i === chartData.length - 1)
 
+    const baselineY = padding.top + innerHeight
+    const totalAreaPath = generateAreaPath(totalPoints, baselineY)
+    const tooltipLeft = hoveredPoint ? (hoveredPoint.x / svgWidth) * 100 : 0
+    const tooltipTop = hoveredPoint ? (hoveredPoint.y / svgHeight) * 100 : 0
+    const tooltipShiftX = tooltipLeft > 75 ? '-110%' : tooltipLeft < 25 ? '10%' : '-50%'
+    const tooltipShiftY = tooltipTop < 25 ? '20%' : '-120%'
+
     return (
-        <div className="card mb-6">
+        <div className="card chart-card mb-6">
             {/* Header with Legend */}
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginBottom: '1.5rem',
-                flexWrap: 'wrap',
-                gap: '1rem'
-            }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div className="chart-header">
+                <div className="chart-title">
                     <TrendingUp size={20} style={{ color: 'var(--primary)' }} />
                     <h3 style={{ margin: 0, fontWeight: 600, fontSize: '1rem' }}>{title}</h3>
                 </div>
                 {/* Legend */}
-                <div style={{ display: 'flex', gap: '1.5rem', fontSize: '0.8rem' }}>
+                <div className="chart-legend">
                     {series.map(s => (
-                        <div key={s.key} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <svg width="24" height="12" style={{ overflow: 'visible' }}>
-                                <line x1="0" y1="6" x2="16" y2="6" stroke={s.color} strokeWidth="2" />
-                                <circle cx="20" cy="6" r="4" fill="white" stroke={s.color} strokeWidth="2" />
-                            </svg>
+                        <div key={s.key} className="chart-legend-item">
+                            <span className="chart-legend-swatch" style={{ background: s.color }}></span>
                             <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>{s.name}</span>
                         </div>
                     ))}
@@ -175,7 +192,7 @@ const ProfitTrendChart = ({
             </div>
 
             {/* Chart Container */}
-            <div style={{ position: 'relative', width: '100%', height: `${height}px` }}>
+            <div className="chart-container" style={{ height: `${height}px` }}>
                 <svg
                     viewBox={`0 0 ${svgWidth} ${svgHeight}`}
                     style={{
@@ -183,11 +200,27 @@ const ProfitTrendChart = ({
                         height: '100%'
                     }}
                     preserveAspectRatio="xMidYMid meet"
+                    onMouseLeave={() => setHoveredPoint(null)}
                 >
                     {/* Definitions for effects */}
                     <defs>
-                        {/* Drop shadow for hover effect */}
-                        <filter id="dotShadow" x="-50%" y="-50%" width="200%" height="200%">
+                        <linearGradient id={`${chartId}-phone-line`} x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0%" stopColor="var(--chart-phone)" stopOpacity="0.8" />
+                            <stop offset="100%" stopColor="var(--chart-phone)" />
+                        </linearGradient>
+                        <linearGradient id={`${chartId}-accessory-line`} x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0%" stopColor="var(--chart-accessory)" stopOpacity="0.8" />
+                            <stop offset="100%" stopColor="var(--chart-accessory)" />
+                        </linearGradient>
+                        <linearGradient id={`${chartId}-total-line`} x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0%" stopColor="var(--chart-total)" stopOpacity="0.8" />
+                            <stop offset="100%" stopColor="var(--chart-total)" />
+                        </linearGradient>
+                        <linearGradient id={`${chartId}-total-area`} x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="var(--chart-total)" stopOpacity="0.3" />
+                            <stop offset="100%" stopColor="var(--chart-total)" stopOpacity="0.04" />
+                        </linearGradient>
+                        <filter id={`${chartId}-dotShadow`} x="-50%" y="-50%" width="200%" height="200%">
                             <feDropShadow dx="0" dy="1" stdDeviation="2" floodOpacity="0.3" />
                         </filter>
                     </defs>
@@ -200,7 +233,7 @@ const ProfitTrendChart = ({
                             y1={tick.y}
                             x2={svgWidth - padding.right}
                             y2={tick.y}
-                            stroke="#E5E7EB"
+                            stroke="var(--chart-grid)"
                             strokeWidth="1"
                             strokeDasharray="4,4"
                         />
@@ -213,9 +246,9 @@ const ProfitTrendChart = ({
                             x={padding.left - 10}
                             y={tick.y + 4}
                             textAnchor="end"
-                            fill="#9CA3AF"
+                            fill="var(--text-tertiary)"
                             fontSize="11"
-                            fontFamily="system-ui, -apple-system, sans-serif"
+                            fontFamily="var(--font-body)"
                         >
                             {tick.value >= 1000 ? `${(tick.value / 1000).toFixed(0)}k` : tick.value}
                         </text>
@@ -228,36 +261,64 @@ const ProfitTrendChart = ({
                         return (
                             <text
                                 key={i}
-                                x={x}
-                                y={svgHeight - 10}
-                                textAnchor="middle"
-                                fill="#9CA3AF"
-                                fontSize="11"
-                                fontFamily="system-ui, -apple-system, sans-serif"
-                            >
-                                {new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                            </text>
-                        )
-                    })}
+                            x={x}
+                            y={svgHeight - 10}
+                            textAnchor="middle"
+                            fill="var(--text-tertiary)"
+                            fontSize="11"
+                            fontFamily="var(--font-body)"
+                        >
+                            {new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        </text>
+                    )
+                })}
+
+                    {/* Total area fill */}
+                    <path
+                        d={totalAreaPath}
+                        fill={`url(#${chartId}-total-area)`}
+                        opacity="0.85"
+                    />
 
                     {/* Draw lines first (behind dots) */}
                     {series.map(s => (
                         <path
                             key={s.key}
-                            d={generatePath(s.points)}
+                            d={generateSmoothPath(s.points)}
                             fill="none"
-                            stroke={s.color}
-                            strokeWidth="2.5"
+                            stroke={s.gradient}
+                            strokeWidth={s.key === 'total' ? '3' : '2.5'}
                             strokeLinecap="round"
                             strokeLinejoin="round"
                             style={{ transition: 'all 0.3s ease' }}
                         />
                     ))}
 
+                    {/* Hover guide */}
+                    {hoveredPoint && (
+                        <line
+                            x1={hoveredPoint.x}
+                            y1={padding.top}
+                            x2={hoveredPoint.x}
+                            y2={baselineY}
+                            stroke="var(--chart-grid-strong)"
+                            strokeDasharray="4,6"
+                        />
+                    )}
+
                     {/* Draw dots on top */}
                     {series.map(s => (
                         s.points.map((p, i) => (
                             <g key={`${s.key}-${i}`}>
+                                {hoveredPoint?.key === s.key && hoveredPoint?.index === i && (
+                                    <circle
+                                        cx={p.x}
+                                        cy={p.y}
+                                        r="10"
+                                        fill={s.color}
+                                        opacity="0.15"
+                                    />
+                                )}
                                 {/* White background circle for contrast */}
                                 <circle
                                     cx={p.x}
@@ -269,9 +330,18 @@ const ProfitTrendChart = ({
                                     style={{
                                         cursor: 'pointer',
                                         transition: 'all 0.2s ease',
-                                        filter: hoveredPoint?.key === s.key && hoveredPoint?.index === i ? 'url(#dotShadow)' : 'none'
+                                        filter: hoveredPoint?.key === s.key && hoveredPoint?.index === i ? `url(#${chartId}-dotShadow)` : 'none'
                                     }}
-                                    onMouseEnter={() => setHoveredPoint({ key: s.key, index: i, value: p.value, date: p.date, name: s.name, color: s.color })}
+                                    onMouseEnter={() => setHoveredPoint({
+                                        key: s.key,
+                                        index: i,
+                                        value: p.value,
+                                        date: p.date,
+                                        name: s.name,
+                                        color: s.color,
+                                        x: p.x,
+                                        y: p.y
+                                    })}
                                     onMouseLeave={() => setHoveredPoint(null)}
                                 />
                             </g>
@@ -281,18 +351,14 @@ const ProfitTrendChart = ({
 
                 {/* Tooltip */}
                 {hoveredPoint && (
-                    <div style={{
-                        position: 'absolute',
-                        top: '10px',
-                        right: '10px',
-                        background: 'var(--surface)',
-                        padding: '0.75rem 1rem',
-                        borderRadius: 'var(--radius-md)',
-                        boxShadow: 'var(--shadow-lg)',
-                        border: '1px solid var(--border)',
-                        fontSize: '0.875rem',
-                        zIndex: 10
-                    }}>
+                    <div
+                        className="chart-tooltip"
+                        style={{
+                            left: `${tooltipLeft}%`,
+                            top: `${tooltipTop}%`,
+                            transform: `translate(${tooltipShiftX}, ${tooltipShiftY})`
+                        }}
+                    >
                         <div style={{ fontWeight: 600, color: hoveredPoint.color, marginBottom: '0.25rem' }}>
                             {hoveredPoint.name}
                         </div>

@@ -8,6 +8,7 @@ import Stock from './pages/Stock'
 import StockCheck from './pages/StockCheck'
 import ProfitTool from './pages/ProfitTool'
 import Reports from './pages/Reports'
+import AnalyticsPage from './pages/AnalyticsPage'
 import Users from './pages/Users'
 
 function App() {
@@ -31,6 +32,7 @@ function App() {
                         {/* Admin Only Routes */}
                         <Route element={<ProtectedRoute requireAdmin />}>
                             <Route path="/users" element={<Users />} />
+                            <Route path="/analytics" element={<AnalyticsPage />} />
                         </Route>
 
                         {/* Default redirect */}

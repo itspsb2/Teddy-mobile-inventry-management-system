@@ -32,7 +32,9 @@ const ProtectedRoute = ({ requireAdmin = false }) => {
             <TopHeader sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
             <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
             <main className={`main-content ${sidebarOpen ? '' : 'sidebar-closed'}`}>
-                <Outlet />
+                <div className="page-shell">
+                    <Outlet />
+                </div>
             </main>
         </div>
     )

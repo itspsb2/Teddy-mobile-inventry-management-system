@@ -5,7 +5,8 @@ import {
     Package,
     Calculator,
     FileText,
-    Users
+    Users,
+    BarChart3
 } from 'lucide-react'
 
 const Sidebar = ({ isOpen, onClose }) => {
@@ -19,7 +20,8 @@ const Sidebar = ({ isOpen, onClose }) => {
     ]
 
     const adminItems = [
-        { to: '/users', icon: Users, label: 'Users' }
+        { to: '/users', icon: Users, label: 'Users' },
+        { to: '/analytics', icon: BarChart3, label: 'Analytics' }
     ]
 
     const handleNavClick = () => {
