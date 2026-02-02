@@ -90,8 +90,8 @@ const Analytics = ({ startDate, endDate, reports }) => {
                 <div className="card-header">
                     <h2 className="card-title">Phone vs Accessory Split</h2>
                 </div>
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                    <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <div style={{ flex: 1, minWidth: '200px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
                             <div style={{ width: '12px', height: '12px', background: 'var(--primary)', borderRadius: '2px' }}></div>
                             <span>Phones</span>
@@ -103,7 +103,7 @@ const Analytics = ({ startDate, endDate, reports }) => {
                             {quickStats.totalProfit > 0 ? ((quickStats.totalPhoneProfit / quickStats.totalProfit) * 100).toFixed(1) : 0}%
                         </div>
                     </div>
-                    <div style={{ flex: 1 }}>
+                    <div style={{ flex: 1, minWidth: '200px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
                             <div style={{ width: '12px', height: '12px', background: 'var(--success)', borderRadius: '2px' }}></div>
                             <span>Accessories</span>

@@ -1,14 +1,32 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import TopHeader from './TopHeader'
 import Sidebar from './Sidebar'
 import { Loader2 } from 'lucide-react'
 
+const getInitialSidebarOpen = () => {
+    if (typeof window === 'undefined') {
+        return true
+    }
+    return window.innerWidth >= 1024
+}
+
 const ProtectedRoute = ({ requireAdmin = false }) => {
     const { user, userProfile, loading, isAdmin } = useAuth()
-    const [sidebarOpen, setSidebarOpen] = useState(true)
+    const [sidebarOpen, setSidebarOpen] = useState(getInitialSidebarOpen)
     const location = useLocation()
+
+    useEffect(() => {
+        const handleResize = () => {
+            if (window.innerWidth < 1024) {
+                setSidebarOpen(false)
+            }
+        }
+
+        window.addEventListener('resize', handleResize)
+        return () => window.removeEventListener('resize', handleResize)
+    }, [])
 
     if (loading) {
         return (

@@ -2274,3 +2274,240 @@ body {
         transform: rotate(-360deg);
     }
 }
+
+/* ============================================
+   MOBILE RESPONSIVE ENHANCEMENTS
+   ============================================ */
+@media (max-width: 1024px) {
+    body,
+    [data-theme="dark"] body {
+        background-attachment: scroll;
+    }
+}
+
+@media (max-width: 900px) {
+    :root {
+        --header-height: 68px;
+        --sidebar-width: 240px;
+    }
+
+    .main-content {
+        padding: 1.75rem 1.5rem 2.5rem;
+    }
+
+    .card {
+        padding: 1.25rem;
+    }
+
+    .table th,
+    .table td {
+        padding: 0.75rem 0.875rem;
+    }
+}
+
+@media (max-width: 768px) {
+    :root {
+        --header-height: 64px;
+        --sidebar-width: min(82vw, 260px);
+    }
+
+    .top-header {
+        padding: 0 1rem;
+    }
+
+    .header-left {
+        gap: 0.5rem;
+    }
+
+    .header-logo img {
+        height: 28px;
+    }
+
+    .header-logo-text {
+        display: none;
+    }
+
+    .header-right {
+        gap: 0.5rem;
+    }
+
+    .icon-btn {
+        width: 36px;
+        height: 36px;
+    }
+
+    .hamburger-btn {
+        width: 40px;
+        height: 40px;
+    }
+
+    .user-menu {
+        padding: 0.25rem;
+    }
+
+    .sidebar {
+        padding: 0.75rem 0.5rem;
+    }
+
+    .nav-item {
+        padding: 0.6rem 0.85rem;
+        font-size: 0.85rem;
+    }
+
+    .nav-section-title {
+        padding: 0.35rem 0.85rem;
+    }
+
+    .main-content {
+        padding: 1.25rem 1rem 2rem;
+    }
+
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .card {
+        padding: 1rem;
+    }
+
+    .card-header {
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .filters {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .search-bar,
+    .search-bar input {
+        width: 100%;
+    }
+
+    .tabs {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding: 0.25rem;
+    }
+
+    .tab {
+        white-space: nowrap;
+        padding: 0.6rem 1rem;
+    }
+
+    .chart-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .chart-legend {
+        gap: 0.5rem 1rem;
+    }
+}
+
+@media (max-width: 640px) {
+    .table-container {
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .table {
+        min-width: 640px;
+    }
+
+    .table th,
+    .table td {
+        font-size: 0.8125rem;
+        padding: 0.65rem 0.75rem;
+    }
+
+    .form-input {
+        font-size: 1rem;
+    }
+
+    .modal {
+        max-height: 92vh;
+    }
+
+    .modal-header {
+        padding: 1rem 1.25rem;
+    }
+
+    .modal-body {
+        padding: 1.25rem;
+    }
+
+    .modal-footer {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .modal-footer .btn {
+        width: 100%;
+    }
+
+    .alert {
+        font-size: 0.8125rem;
+    }
+
+    .bar-chart {
+        height: 120px;
+        gap: 0.35rem;
+    }
+
+    .bar-label {
+        font-size: 0.7rem;
+    }
+
+    .split-bar {
+        height: 10px;
+    }
+
+    .page-subtitle {
+        font-size: 0.8125rem;
+    }
+
+    .stat-value {
+        font-size: 1.3rem;
+    }
+}
+
+@media (max-width: 480px) {
+    :root {
+        --header-height: 60px;
+    }
+
+    .top-header {
+        padding: 0 0.75rem;
+    }
+
+    .user-avatar {
+        width: 28px;
+        height: 28px;
+        font-size: 0.75rem;
+    }
+
+    .main-content {
+        padding: 1rem 0.75rem 1.5rem;
+    }
+
+    .card {
+        padding: 0.9rem;
+    }
+
+    .page-title {
+        font-size: 1.35rem;
+    }
+
+    .form-input {
+        padding: 0.65rem 0.85rem;
+    }
+}
