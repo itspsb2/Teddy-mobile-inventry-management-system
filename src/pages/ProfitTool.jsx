@@ -149,8 +149,11 @@ const ProfitCalculations = () => {
         return { profit, thabrew: profit * 0.8, kelan: profit * 0.2 }
     }
 
-    // For accessories: if profit is negative, full loss goes to TB only, Kelan gets 0
+    // For accessories: if revenue is zero, profit and shares are zero; if profit is negative, full loss goes to TB only
     const calculateAccessoryProfitSplit = (revenue, cost) => {
+        if (revenue === 0) {
+            return { profit: 0, thabrew: 0, kelan: 0 }
+        }
         const profit = revenue - cost
         if (profit < 0) {
             // Loss: full amount goes to Thabrew, Kelan gets 0
